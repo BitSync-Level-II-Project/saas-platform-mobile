@@ -14,8 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BottomTabInset } from "@/constants/theme";
-import { demoWorkerTask } from "./demo-worker-task";
-
+import type { WorkerTask } from "./demo-worker-task";
 type Answer = {
   fieldId: string;
   value: string | number | boolean;
@@ -23,8 +22,7 @@ type Answer = {
 
 type Draft = Record<string, string | boolean | undefined>;
 
-export default function WorkerFormScreen() {
-  const task = demoWorkerTask;
+export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
 
   const [draft, setDraft] = useState<Draft>({});
   const [errors, setErrors] = useState<string[]>([]);
@@ -43,6 +41,7 @@ export default function WorkerFormScreen() {
   function previewAnswers() {
     const nextErrors: string[] = [];
     const answers: Answer[] = [];
+
 
     for (const field of task.form.fields) {
       const raw = draft[field.id];
@@ -80,6 +79,15 @@ export default function WorkerFormScreen() {
 
           break;
 
+        case "barcode":
+          if (typeof raw === "string") {
+            answers.push({ fieldId: field.id, value: raw.trim() });
+          } else {
+            nextErrors.push(`${field.label} must be text.`);
+          }
+
+          break;
+
         case "short-text":
           if (typeof raw === "string") {
             answers.push({ fieldId: field.id, value: raw.trim() });
@@ -87,6 +95,14 @@ export default function WorkerFormScreen() {
             nextErrors.push(`${field.label} must be text.`);
           }
 
+          break;
+
+        case "dropdown":
+          if (typeof raw === "string" && field.options?.includes(raw)) {
+            answers.push({ fieldId: field.id, value: raw });
+          } else {
+            nextErrors.push(`Choose a valid option for ${field.label}.`);
+          }
           break;
 
         default:
@@ -116,7 +132,7 @@ export default function WorkerFormScreen() {
           <View style={styles.card}>
             <Text style={styles.badge}>DEMO TASK · {task.status}</Text>
             <Text style={styles.title}>{task.title}</Text>
-            <Text style={styles.muted}>{task.form.name}</Text>
+            <Text style={styles.muted}>{task.form.details.name}</Text>
           </View>
 
           <View style={styles.card}>
@@ -124,6 +140,18 @@ export default function WorkerFormScreen() {
 
             {task.form.fields.map((field) => {
               const value = draft[field.id];
+              const choices =
+                field.type === "yes-no"
+                  ? [
+                      { label: "Yes", value: true },
+                      { label: "No", value: false },
+                    ]
+                  : field.type === "dropdown"
+                    ? (field.options ?? []).map((option) => ({
+                        label: option,
+                        value: option,
+                      }))
+                    : null;
 
               return (
                 <View key={field.id} style={styles.field}>
@@ -132,12 +160,9 @@ export default function WorkerFormScreen() {
                     {field.required ? " *" : ""}
                   </Text>
 
-                  {field.type === "yes-no" ? (
+                  {choices !== null ? (
                     <View style={styles.row}>
-                      {[
-                        { label: "Yes", value: true },
-                        { label: "No", value: false },
-                      ].map((option) => (
+                      {choices.map((option) => (
                         <Pressable
                           key={option.label}
                           accessibilityRole="radio"
@@ -184,12 +209,21 @@ export default function WorkerFormScreen() {
               </View>
             )}
 
+            {task.id === "equipment-check" && (
+              <View style={styles.card}>
+                <Text style={styles.label}>Photo evidence</Text>
+                <Text style={styles.muted}>
+                  Camera capture is unavailable in this preview.
+                </Text>
+              </View>
+            )}
+
             <Pressable
               accessibilityRole="button"
               onPress={previewAnswers}
               style={styles.button}
             >
-              <Text style={styles.buttonText}>Preview answers</Text>
+              <Text style={styles.buttonText}>Review submission</Text>
             </Pressable>
 
             <Text style={styles.muted}>
