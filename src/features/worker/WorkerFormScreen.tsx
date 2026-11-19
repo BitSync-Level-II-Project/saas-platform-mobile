@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -111,7 +112,13 @@ export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
     }
 
     setErrors(nextErrors);
-    setPreview(nextErrors.length === 0 ? answers : null);
+    if (nextErrors.length > 0) {
+      setPreview(null);
+      return;
+    }
+
+    Keyboard.dismiss();
+    setPreview(answers);
   }
 
   return (
@@ -123,6 +130,7 @@ export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          key={preview === null ? "capture" : "review"}
         >
           <View>
             <Text style={styles.brand}>SiteTrace</Text>
@@ -135,105 +143,111 @@ export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
             <Text style={styles.muted}>{task.form.details.name}</Text>
           </View>
 
-          <View style={styles.card}>
-            <Text style={styles.heading}>Complete your form</Text>
+          {preview === null && (
+            <View style={styles.card}>
+              <Text style={styles.heading}>Complete your form</Text>
 
-            {task.form.fields.map((field) => {
-              const value = draft[field.id];
-              const choices =
-                field.type === "yes-no"
-                  ? [
-                      { label: "Yes", value: true },
-                      { label: "No", value: false },
-                    ]
-                  : field.type === "dropdown"
-                    ? (field.options ?? []).map((option) => ({
-                        label: option,
-                        value: option,
-                      }))
-                    : null;
+              {task.form.fields.map((field) => {
+                const value = draft[field.id];
+                const choices =
+                  field.type === "yes-no"
+                    ? [
+                        { label: "Yes", value: true },
+                        { label: "No", value: false },
+                      ]
+                    : field.type === "dropdown"
+                      ? (field.options ?? []).map((option) => ({
+                          label: option,
+                          value: option,
+                        }))
+                      : null;
 
-              return (
-                <View key={field.id} style={styles.field}>
-                  <Text style={styles.label}>
-                    {field.label}
-                    {field.required ? " *" : ""}
-                  </Text>
+                return (
+                  <View key={field.id} style={styles.field}>
+                    <Text style={styles.label}>
+                      {field.label}
+                      {field.required ? " *" : ""}
+                    </Text>
 
-                  {choices !== null ? (
-                    <View style={styles.row}>
-                      {choices.map((option) => (
-                        <Pressable
-                          key={option.label}
-                          accessibilityRole="radio"
-                          accessibilityLabel={`${field.label}: ${option.label}`}
-                          accessibilityState={{
-                            checked: value === option.value,
-                          }}
-                          onPress={() => updateAnswer(field.id, option.value)}
-                          style={[
-                            styles.choice,
-                            value === option.value && styles.selected,
-                          ]}
-                        >
-                          <Text style={styles.label}>{option.label}</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  ) : (
-                    <TextInput
-                      accessibilityLabel={field.label}
-                      style={styles.input}
-                      value={typeof value === "string" ? value : ""}
-                      onChangeText={(text) => updateAnswer(field.id, text)}
-                      inputMode={field.type === "number" ? "decimal" : "text"}
-                      placeholder={
-                        field.type === "number"
-                          ? "Enter a reading"
-                          : "Enter your answer"
-                      }
-                      placeholderTextColor="#717995"
-                    />
-                  )}
+                    {choices !== null ? (
+                      <View style={styles.row}>
+                        {choices.map((option) => (
+                          <Pressable
+                            key={option.label}
+                            accessibilityRole="radio"
+                            accessibilityLabel={`${field.label}: ${option.label}`}
+                            accessibilityState={{
+                              checked: value === option.value,
+                            }}
+                            onPress={() => updateAnswer(field.id, option.value)}
+                            style={[
+                              styles.choice,
+                              value === option.value && styles.selected,
+                            ]}
+                          >
+                            <Text style={styles.label}>{option.label}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    ) : (
+                      <TextInput
+                        accessibilityLabel={field.label}
+                        style={styles.input}
+                        value={typeof value === "string" ? value : ""}
+                        onChangeText={(text) => updateAnswer(field.id, text)}
+                        inputMode={field.type === "number" ? "decimal" : "text"}
+                        placeholder={
+                          field.type === "number"
+                            ? "Enter a reading"
+                            : "Enter your answer"
+                        }
+                        placeholderTextColor="#717995"
+                      />
+                    )}
+                  </View>
+                );
+              })}
+
+              {errors.length > 0 && (
+                <View accessibilityRole="alert">
+                  {errors.map((error) => (
+                    <Text key={error} style={styles.error}>
+                      {error}
+                    </Text>
+                  ))}
                 </View>
-              );
-            })}
+              )}
 
-            {errors.length > 0 && (
-              <View accessibilityRole="alert">
-                {errors.map((error) => (
-                  <Text key={error} style={styles.error}>
-                    {error}
+              {task.id === "equipment-check" && (
+                <View style={styles.card}>
+                  <Text style={styles.label}>Photo evidence</Text>
+                  <Text style={styles.muted}>
+                    Camera capture is unavailable in this preview.
                   </Text>
-                ))}
-              </View>
-            )}
+                </View>
+              )}
 
-            {task.id === "equipment-check" && (
-              <View style={styles.card}>
-                <Text style={styles.label}>Photo evidence</Text>
-                <Text style={styles.muted}>
-                  Camera capture is unavailable in this preview.
-                </Text>
-              </View>
-            )}
+              <Pressable
+                accessibilityRole="button"
+                onPress={previewAnswers}
+                style={styles.button}
+              >
+                <Text style={styles.buttonText}>Review submission</Text>
+              </Pressable>
 
-            <Pressable
-              accessibilityRole="button"
-              onPress={previewAnswers}
-              style={styles.button}
-            >
-              <Text style={styles.buttonText}>Review submission</Text>
-            </Pressable>
-
-            <Text style={styles.muted}>
-              Demo only. Answers are not saved or submitted.
-            </Text>
-          </View>
+              <Text style={styles.muted}>
+                Demo only. Answers are not saved or submitted.
+              </Text>
+            </View>
+          )}
 
           {preview !== null && (
             <View style={styles.card}>
-              <Text style={styles.heading}>Answer preview</Text>
+              <Text style={styles.heading}>Review submission</Text>
+
+              {preview.length === 0 && (
+                <Text style={styles.muted}>No answers entered.</Text>
+              )}
 
               {preview.map((answer) => (
                 <View key={answer.fieldId} style={styles.field}>
@@ -254,6 +268,17 @@ export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
                   </Text>
                 </View>
               ))}
+
+              <Text style={styles.muted}>
+                Preview only. This record has not been submitted.
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.button}
+                onPress={() => setPreview(null)}
+              >
+                <Text style={styles.buttonText}>Edit answers</Text>
+              </Pressable>
             </View>
           )}
         </ScrollView>
