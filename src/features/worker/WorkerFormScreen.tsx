@@ -16,6 +16,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BottomTabInset } from "@/constants/theme";
 import type { WorkerTask } from "./demo-worker-task";
+import { WorkerDemoSubmit } from "./WorkerDemoSubmit";
+
 type Answer = {
   fieldId: string;
   value: string | number | boolean;
@@ -236,7 +238,7 @@ export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
               </Pressable>
 
               <Text style={styles.muted}>
-                Demo only. Answers are not saved or submitted.
+                Demo only. Review your answers before simulating submission.
               </Text>
             </View>
           )}
@@ -269,16 +271,12 @@ export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
                 </View>
               ))}
 
-              <Text style={styles.muted}>
-                Preview only. This record has not been submitted.
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                style={styles.button}
-                onPress={() => setPreview(null)}
-              >
-                <Text style={styles.buttonText}>Edit answers</Text>
-              </Pressable>
+              <WorkerDemoSubmit
+                taskId={task.id}
+                templateVersionId={task.templateVersionId}
+                answers={preview}
+                onEdit={() => setPreview(null)}
+              />
             </View>
           )}
         </ScrollView>
