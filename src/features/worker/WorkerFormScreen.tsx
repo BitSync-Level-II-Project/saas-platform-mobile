@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BottomTabInset } from "@/constants/theme";
 import type { WorkerTask } from "./demo-worker-task";
 import { WorkerDemoSubmit } from "./WorkerDemoSubmit";
+import { WorkerBarcodeField } from "./WorkerBarcodeField";
 
 type Answer = {
   fieldId: string;
@@ -166,6 +167,7 @@ export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
 
                 return (
                   <View key={field.id} style={styles.field}>
+                    
                     <Text style={styles.label}>
                       {field.label}
                       {field.required ? " *" : ""}
@@ -191,6 +193,12 @@ export default function WorkerFormScreen({ task }: { task: WorkerTask }) {
                           </Pressable>
                         ))}
                       </View>
+                    ) : field.type === "barcode" ? (
+                      <WorkerBarcodeField
+                        label={field.label}
+                        value={typeof value === "string" ? value : ""}
+                        onChange={(code) => updateAnswer(field.id, code)}
+                      />
                     ) : (
                       <TextInput
                         accessibilityLabel={field.label}
