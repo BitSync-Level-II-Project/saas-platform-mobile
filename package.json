@@ -10,12 +10,14 @@
     "expo-crypto": "~58.0.8",
     "expo-dev-client": "~58.0.21",
     "expo-device": "~58.0.5",
+    "expo-file-system": "~58.0.14",
     "expo-font": "~58.0.9",
     "expo-glass-effect": "~58.0.5",
     "expo-image": "~58.0.18",
     "expo-linking": "~58.0.17",
     "expo-router": "~58.0.32",
     "expo-splash-screen": "~58.0.14",
+    "expo-sqlite": "~58.0.18",
     "expo-status-bar": "~58.0.5",
     "expo-symbols": "~58.0.5",
     "expo-system-ui": "~58.0.7",
@@ -43,7 +45,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test:worker": "node --test test/worker-submit-session.test.mjs test/worker-offline.test.mjs"
   },
   "private": true,
   "engines": {

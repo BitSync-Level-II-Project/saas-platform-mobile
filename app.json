@@ -37,14 +37,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow SiteTrace to scan equipment barcodes.",
+          "cameraPermission": "Allow SiteTrace to scan equipment codes and take evidence photos.",
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": true
         }
       ],
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,

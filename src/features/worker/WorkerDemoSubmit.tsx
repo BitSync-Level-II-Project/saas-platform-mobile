@@ -1,102 +1,51 @@
-import { randomUUID } from "expo-crypto";
-import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import {
-  createDemoAttemptTransport,
-  createWorkerSubmitSession,
-  type SubmitState,
-  type WorkerAnswer,
-} from "./worker-submit-session";
+import type { WorkerSlot } from "./worker-offline-model";
 
 type Props = {
-  taskId: string;
-  templateVersionId: string;
-  answers: readonly WorkerAnswer[];
+  slot: WorkerSlot | null;
+  busy: boolean;
+  onSubmit: () => void;
+  onRetry: () => void;
   onEdit: () => void;
 };
 
-export function WorkerDemoSubmit({
-  taskId,
-  templateVersionId,
-  answers,
-  onEdit,
-}: Props) {
-  const [session] = useState(() =>
-    createWorkerSubmitSession(createDemoAttemptTransport()),
-  );
-  const [state, setState] = useState<SubmitState>({ phase: "idle" });
-
-  function submit() {
-    void session.submit(
-      () => ({
-        clientAttemptId: randomUUID(),
-        taskId,
-        templateVersionId,
-        answers,
-      }),
-      setState,
-    );
-  }
-
-  const message =
-    state.phase === "idle"
-      ? (state.message ?? "Simulate a lost response and retry.")
-      : state.phase === "sending"
-        ? "Sending demo attempt…"
-        : state.phase === "retry"
-          ? "Response lost in demo. Retry will reuse the same attempt."
-          : "Demo retry confirmed. No record was sent to the server.";
-
+export function WorkerDemoSubmit({ slot, busy, onSubmit, onRetry, onEdit }: Props) {
+  const pending = slot?.phase === "pending-demo";
+  const confirmed = slot?.phase === "confirmed-demo";
   return (
-    <View style={styles.actions}>
-      <Text style={styles.note}>Demo only · No data is sent.</Text>
+    <View style={{ gap: 12 }}>
+      <Text style={styles.note}>Demo only · No data is sent. Task status is unchanged.</Text>
       <Text accessibilityLiveRegion="polite" style={styles.note}>
-        {message}
+        {confirmed ? "Demo attempt confirmed on this device" : pending
+          ? "Demo retry needed. Confirmation was deliberately withheld. Retry uses the saved attempt and answers."
+          : "Simulate submission to save a pending demo attempt on this device."}
       </Text>
-
-      {state.phase !== "confirmed" && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: state.phase === "sending" }}
-          disabled={state.phase === "sending"}
-          onPress={submit}
-          style={[styles.button, state.phase === "sending" && styles.disabled]}
-        >
-          <Text style={styles.buttonText}>
-            {state.phase === "sending"
-              ? "Sending…"
-              : state.phase === "retry"
-                ? "Retry demo"
-                : "Simulate submit"}
-          </Text>
+      {slot && slot.phase !== "draft" && (
+        <>
+          <Text selectable style={styles.note}>Attempt ID: {slot.payload.clientAttemptId}</Text>
+          <Text selectable style={styles.note}>Task: {slot.payload.taskId}</Text>
+          <Text selectable style={styles.note}>Template version: {slot.payload.templateVersionId}</Text>
+          <Text style={styles.note}>Saved: {new Date(slot.savedAt).toLocaleString()}</Text>
+        </>
+      )}
+      {confirmed && <Text style={styles.note}>Local confirmation: {new Date(slot.confirmedAt).toLocaleString()}</Text>}
+      {!confirmed && (
+        <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy }} disabled={busy}
+          onPress={pending ? onRetry : onSubmit} style={[styles.button, busy && { opacity: 0.6 }]}>
+          <Text style={styles.buttonText}>{busy ? "Saving…" : pending ? "Retry demo" : "Simulate submission"}</Text>
         </Pressable>
       )}
-
-      {state.phase === "idle" && (
-        <Pressable
-          accessibilityRole="button"
-          onPress={onEdit}
-          style={styles.edit}
-        >
+      {!pending && !confirmed && (
+        <Pressable accessibilityRole="button" disabled={busy} onPress={onEdit} style={styles.edit}>
           <Text style={styles.editText}>Edit answers</Text>
         </Pressable>
       )}
     </View>
   );
 }
-
 const styles = StyleSheet.create({
-  actions: { gap: 12 },
   note: { color: "#59617d", fontSize: 14, lineHeight: 21 },
-  button: {
-    minHeight: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    backgroundColor: "#4f46e5",
-  },
-  disabled: { opacity: 0.6 },
+  button: { minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: 10, backgroundColor: "#4f46e5" },
   buttonText: { color: "#fff", fontWeight: "700" },
   edit: { minHeight: 48, alignItems: "center", justifyContent: "center" },
   editText: { color: "#4f46e5", fontWeight: "700" },

@@ -17,6 +17,7 @@ export type WorkerTask = {
   supervisorName: string;
   instructions: string;
   templateVersionId: string;
+  evidencePolicy: "optional" | "required";
   form: {
     versionId: string;
     version: number;
@@ -40,6 +41,7 @@ export const demoWorkerTasks: WorkerTask[] = [
     supervisorName: "Malith Senanayake",
     instructions: "Read the equipment display and record the condition.",
     templateVersionId: equipmentVersion,
+    evidencePolicy: "optional",
     form: {
       versionId: equipmentVersion,
       version: 3,
@@ -79,6 +81,7 @@ export const demoWorkerTasks: WorkerTask[] = [
     supervisorName: "Malith Senanayake",
     instructions: "Check that the loading bay entrance is clear.",
     templateVersionId: loadingBayVersion,
+    evidencePolicy: "required",
     form: {
       versionId: loadingBayVersion,
       version: 1,

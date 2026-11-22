@@ -34,3 +34,11 @@ jobs:
       - name: Web lint
         if: github.event.repository.name == 'saas-platform-web'
         run: npm run lint
+
+      - name: Mobile lint
+        if: github.event.repository.name == 'saas-platform-mobile'
+        run: npm run lint
+
+      - name: Worker offline tests
+        if: github.event.repository.name == 'saas-platform-mobile'
+        run: npm run test:worker

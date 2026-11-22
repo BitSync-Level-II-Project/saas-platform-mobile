@@ -1,15 +1,25 @@
 import { Link, useLocalSearchParams } from "expo-router";
+import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { findDemoTask } from "@/features/worker/demo-worker-task";
+import { localRecordLabel, workerIdentity, workerSlotKey } from "@/features/worker/worker-offline-model";
+import { useWorkerRecords } from "@/features/worker/use-worker-records";
 
 export default function TaskDetailsScreen() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const task = findDemoTask(taskId);
+  const tasks = useMemo(() => task ? [task] : [], [task]);
+  const { records, retryLoad } = useWorkerRecords(tasks);
 
   if (!task) {
     return <Text style={styles.missing}>Task not found.</Text>;
   }
+
+  const read = records[workerSlotKey(workerIdentity(task))];
+  const phase = read?.kind === "found" ? read.slot.phase : null;
+  const actionLabel = phase === "draft" ? "Resume draft" : phase === "pending-demo" ? "Retry demo"
+    : phase === "confirmed-demo" ? "View demo receipt" : "Start capture";
 
   const details = [
     ["Warehouse / location", `${task.warehouse} · ${task.location}`],
@@ -22,6 +32,13 @@ export default function TaskDetailsScreen() {
     <ScrollView style={styles.page} contentContainerStyle={styles.content}>
       <Text style={styles.title}>{task.title}</Text>
       <Text style={styles.badge}>{task.status}</Text>
+      <Text style={styles.muted}>Demo workspace · {localRecordLabel(read) ?? "No saved record"}</Text>
+      {(read?.kind === "invalid" || read?.kind === "unavailable") && (
+        <View style={styles.card}>
+          <Text accessibilityRole="alert" style={styles.muted}>{read.message}</Text>
+          <Pressable accessibilityRole="button" onPress={retryLoad} style={styles.button}><Text style={styles.buttonText}>Retry load</Text></Pressable>
+        </View>
+      )}
 
       <View style={styles.card}>
         {details.map(([label, value]) => (
@@ -42,7 +59,7 @@ export default function TaskDetailsScreen() {
         asChild
       >
         <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>Start capture</Text>
+          <Text style={styles.buttonText}>{!read ? "Loading saved record…" : read.kind === "invalid" || read.kind === "unavailable" ? "View saved record issue" : actionLabel}</Text>
         </Pressable>
       </Link>
     </ScrollView>

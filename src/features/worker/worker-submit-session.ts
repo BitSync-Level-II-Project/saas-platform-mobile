@@ -1,14 +1,6 @@
-export type WorkerAnswer = {
-  readonly fieldId: string;
-  readonly value: string | number | boolean;
-};
-
-export type AttemptPayload = {
-  readonly clientAttemptId: string;
-  readonly taskId: string;
-  readonly templateVersionId: string;
-  readonly answers: readonly WorkerAnswer[];
-};
+import { snapshotAttempt, type AttemptPayload } from "./worker-offline-model.ts";
+export { snapshotAttempt } from "./worker-offline-model.ts";
+export type { AttemptPayload, WorkerAnswer } from "./worker-offline-model.ts";
 
 export type DemoReceipt = {
   readonly clientAttemptId: string;
@@ -20,17 +12,6 @@ export type SubmitState =
   | { phase: "sending" }
   | { phase: "retry" }
   | { phase: "confirmed" };
-
-export function snapshotAttempt(input: AttemptPayload): AttemptPayload {
-  return Object.freeze({
-    clientAttemptId: input.clientAttemptId,
-    taskId: input.taskId,
-    templateVersionId: input.templateVersionId,
-    answers: Object.freeze(
-      input.answers.map((answer) => Object.freeze({ ...answer })),
-    ),
-  });
-}
 
 // Screen-scoped simulation only: record it once, then lose the first reply.
 export function createDemoAttemptTransport() {
