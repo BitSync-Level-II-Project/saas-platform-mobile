@@ -12,5 +12,5 @@ export default function TaskCaptureRoute() {
     return <Text style={{ padding: 20 }}>The task form is unavailable.</Text>;
   }
 
-  return <WorkerFormScreen key={task.id} task={task} />;
+  return <WorkerFormScreen key={JSON.stringify([task.id, task.templateVersionId])} task={task} />;
 }

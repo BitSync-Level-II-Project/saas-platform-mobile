@@ -2,8 +2,11 @@ import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { demoWorkerTasks } from "@/features/worker/demo-worker-task";
+import { localRecordLabel, workerIdentity, workerSlotKey } from "@/features/worker/worker-offline-model";
+import { useWorkerRecords } from "@/features/worker/use-worker-records";
 
 export default function MyTasksScreen() {
+  const { records, retryLoad } = useWorkerRecords(demoWorkerTasks);
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: "#f6f7fb" }}
@@ -53,9 +56,19 @@ export default function MyTasksScreen() {
               </Text>
             </View>
             <Text style={{ color: "#59617d" }}>{task.dueLabel}</Text>
+            {localRecordLabel(records[workerSlotKey(workerIdentity(task))]) && (
+              <Text style={{ color: "#59617d", fontSize: 13, fontWeight: "600" }}>
+                {localRecordLabel(records[workerSlotKey(workerIdentity(task))])}
+              </Text>
+            )}
           </Pressable>
         </Link>
       ))}
+      {Object.values(records).some((read) => read.kind === "invalid" || read.kind === "unavailable") && (
+        <Pressable accessibilityRole="button" onPress={retryLoad} style={{ minHeight: 48, justifyContent: "center" }}>
+          <Text style={{ color: "#4f46e5", fontWeight: "700" }}>Retry load saved records</Text>
+        </Pressable>
+      )}
     </ScrollView>
   );
 }
